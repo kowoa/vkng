@@ -6,24 +6,31 @@
 #include <vk_types.h>
 
 class VulkanEngine {
-public:
+  public:
+    bool initialized{false};
+    int frame_number{0};
 
-	bool _isInitialized{ false };
-	int _frameNumber {0};
+    VkExtent2D window_extent{1700, 900};
 
-	VkExtent2D _windowExtent{ 1700 , 900 };
+    struct SDL_Window *window{nullptr};
 
-	struct SDL_Window* _window{ nullptr };
+    // initializes everything in the engine
+    void init();
 
-	//initializes everything in the engine
-	void init();
+    // shuts down the engine
+    void cleanup();
 
-	//shuts down the engine
-	void cleanup();
+    // draw loop
+    void draw();
 
-	//draw loop
-	void draw();
+    // run main loop
+    void run();
 
-	//run main loop
-	void run();
+  private:
+    VkInstance instance;
+    VkDebugUtilsMessengerEXT debug_messenger;
+    VkPhysicalDevice chosen_gpu;
+    VkDevice device;
+    VkSurfaceKHR surface;
+    void init_vulkan();
 };
