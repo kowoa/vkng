@@ -1,4 +1,6 @@
 find_package(Vulkan REQUIRED)
+
+message(STATUS "SDL2_DIR: ${SDL2_DIR}")
 find_package(SDL2 REQUIRED)
 
 add_library(vkbootstrap STATIC)
