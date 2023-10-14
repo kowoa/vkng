@@ -7,38 +7,6 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  macos:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v2
-    - name: Create Build Environment
-      run: cmake -E make_directory ${{github.workspace}}/build
-
-    - name: Prepare Vulkan SDK
-      uses: humbletim/setup-vulkan-sdk@v1.2.0
-      with:
-        vulkan-query-version: 1.3.204.0
-        vulkan-components: Vulkan-Headers, Vulkan-Loader
-        vulkan-use-cache: true
-  
-    - name: Dependencies
-      run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && brew install sdl2
-
-    - name: Configure CMake
-      # Use a bash shell so we can use the same syntax for environment variable
-      # access regardless of the host operating system
-      shell: bash
-      working-directory: ${{github.workspace}}/build
-      # Note the current convention is to use the -S and -B options here to specify source 
-      # and build directories, but this is only available with CMake 3.13 and higher.  
-      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-
-    - name: Build
-      working-directory: ${{github.workspace}}/build
-      shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build . --config $BUILD_TYPE
   linuxbuild:
     # The CMake configure and build commands are platform agnostic and should work equally
     # well on Windows or Mac.  You can convert this to a matrix build if you need
@@ -102,6 +70,39 @@ jobs:
         vulkan-components: Vulkan-Headers, Vulkan-Loader
         vulkan-use-cache: true
         
+    - name: Configure CMake
+      # Use a bash shell so we can use the same syntax for environment variable
+      # access regardless of the host operating system
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      # Note the current convention is to use the -S and -B options here to specify source 
+      # and build directories, but this is only available with CMake 3.13 and higher.  
+      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: cmake --build . --config $BUILD_TYPE
+
+  macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{github.workspace}}/build
+
+    - name: Prepare Vulkan SDK
+      uses: humbletim/setup-vulkan-sdk@v1.2.0
+      with:
+        vulkan-query-version: 1.3.204.0
+        vulkan-components: Vulkan-Headers, Vulkan-Loader
+        vulkan-use-cache: true
+  
+    - name: Dependencies
+      run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && brew install sdl2
+
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
