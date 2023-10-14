@@ -36,11 +36,24 @@ void VulkanEngine::init() {
     // load the core vulkan structures
     init_vulkan();
 
+    // create the swapchain();
+    init_swapchain();
+
     // everything went fine
     initialized = true;
 }
 void VulkanEngine::cleanup() {
     if (initialized) {
+        vkDestroySwapchainKHR(device, swapchain, nullptr);
+        for (int i = 0; i < swapchain_img_views.size(); i++) {
+            vkDestroyImageView(device, swapchain_img_views[i], nullptr);
+        }
+
+        vkDestroyDevice(device, nullptr);
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+        vkb::destroy_debug_utils_messenger(instance, debug_messenger);
+        vkDestroyInstance(instance, nullptr);
+        
         SDL_DestroyWindow(window);
     }
 }
@@ -110,4 +123,20 @@ void VulkanEngine::init_vulkan() {
     // store the device and physical device handles
     device = vkb_dev.device;
     chosen_gpu = vkb_phys_dev.physical_device;
+}
+
+void VulkanEngine::init_swapchain() {
+    vkb::SwapchainBuilder swapchain_builder{chosen_gpu, device, surface};
+    vkb::Swapchain vkb_swapchain = swapchain_builder
+        .use_default_format_selection()
+        .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
+        .set_desired_extent(window_extent.width, window_extent.height)
+        .build()
+        .value();
+
+    // store swapchain and images
+    swapchain = vkb_swapchain.swapchain;
+    swapchain_imgs = vkb_swapchain.get_images().value();
+    swapchain_img_views = vkb_swapchain.get_image_views().value();
+    swapchain_img_fmt = vkb_swapchain.image_format;
 }

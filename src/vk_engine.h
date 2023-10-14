@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <vector>
 #include <vk_types.h>
 
 class VulkanEngine {
@@ -32,5 +33,12 @@ class VulkanEngine {
     VkPhysicalDevice chosen_gpu;
     VkDevice device;
     VkSurfaceKHR surface;
+
+    VkSwapchainKHR swapchain;
+    VkFormat swapchain_img_fmt;
+    std::vector<VkImage> swapchain_imgs;
+    std::vector<VkImageView> swapchain_img_views;
+    
     void init_vulkan();
+    void init_swapchain();
 };
