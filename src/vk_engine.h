@@ -38,7 +38,14 @@ class VulkanEngine {
     VkFormat swapchain_img_fmt;
     std::vector<VkImage> swapchain_imgs;
     std::vector<VkImageView> swapchain_img_views;
-    
+
+    VkQueue graphics_queue;
+    uint32_t graphics_queue_family;
+
+    VkCommandPool command_pool;
+    VkCommandBuffer main_command_buffer;
+
     void init_vulkan();
     void init_swapchain();
+    void init_commands();
 };

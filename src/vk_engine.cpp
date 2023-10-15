@@ -36,14 +36,19 @@ void VulkanEngine::init() {
     // load the core vulkan structures
     init_vulkan();
 
-    // create the swapchain();
+    // create the swapchain;
     init_swapchain();
+
+    // create commands
+    init_commands();
 
     // everything went fine
     initialized = true;
 }
 void VulkanEngine::cleanup() {
     if (initialized) {
+        vkDestroyCommandPool(device, command_pool, nullptr);
+        
         vkDestroySwapchainKHR(device, swapchain, nullptr);
         for (int i = 0; i < swapchain_img_views.size(); i++) {
             vkDestroyImageView(device, swapchain_img_views[i], nullptr);
@@ -123,6 +128,10 @@ void VulkanEngine::init_vulkan() {
     // store the device and physical device handles
     device = vkb_dev.device;
     chosen_gpu = vkb_phys_dev.physical_device;
+
+    // store graphics queue and family
+    graphics_queue = vkb_dev.get_queue(vkb::QueueType::graphics).value();
+    graphics_queue_family = vkb_dev.get_queue_index(vkb::QueueType::graphics).value();
 }
 
 void VulkanEngine::init_swapchain() {
@@ -139,4 +148,19 @@ void VulkanEngine::init_swapchain() {
     swapchain_imgs = vkb_swapchain.get_images().value();
     swapchain_img_views = vkb_swapchain.get_image_views().value();
     swapchain_img_fmt = vkb_swapchain.image_format;
+}
+
+void VulkanEngine::init_commands() {
+    // Create command pool for submitting graphics commands
+    // Also allow resetting of individual command buffers inside the pool
+    VkCommandPoolCreateInfo command_pool_info = vkinit::command_pool_create_info(
+        graphics_queue_family, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    VK_CHECK(vkCreateCommandPool(
+        device, &command_pool_info, nullptr, &command_pool));
+
+    // allocate default command buffer for rendering
+    VkCommandBufferAllocateInfo cmd_alloc_info = vkinit::command_buffer_alloc_info(
+        command_pool, 1, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    VK_CHECK(vkAllocateCommandBuffers(
+        device, &cmd_alloc_info, &main_command_buffer));
 }
