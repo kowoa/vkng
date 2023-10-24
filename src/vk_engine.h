@@ -45,12 +45,21 @@ class VulkanEngine {
     VkCommandPool command_pool;
     VkCommandBuffer main_command_buffer;
 
+    // Default renderpass
     VkRenderPass renderpass;
+
+    // Framebuffers
     std::vector<VkFramebuffer> framebuffers;
 
+    // Sync structures
+    VkSemaphore present_semaphore;
+    VkSemaphore render_semaphore;
+    VkFence render_fence;
+    
     void init_vulkan();
     void init_swapchain();
     void init_commands();
     void init_default_renderpass();
     void init_framebuffers();
+    void init_sync_structures();
 };
