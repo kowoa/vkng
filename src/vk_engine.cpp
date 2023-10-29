@@ -80,74 +80,85 @@ void VulkanEngine::draw() {
     uint32_t swapchain_img_idx;
     VK_CHECK(vkAcquireNextImageKHR(device, swapchain, 1000000000, present_semaphore, nullptr, &swapchain_img_idx));
 
-    // Reset the command buffer before beginning recording
     VkCommandBuffer cmd = main_command_buffer;
-    VK_CHECK(vkResetCommandBuffer(cmd, 0));
+    { // Command buffer recording
+        // Reset the command buffer before beginning recording
+        VK_CHECK(vkResetCommandBuffer(cmd, 0));
 
-    // Begin recording command buffer
-    VkCommandBufferBeginInfo cmd_info = {};
-    cmd_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    cmd_info.pNext = nullptr;
-    cmd_info.pInheritanceInfo = nullptr;
-    cmd_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    VK_CHECK(vkBeginCommandBuffer(cmd, &cmd_info));
+        // Begin recording command buffer
+        VkCommandBufferBeginInfo cmd_info = {};
+        cmd_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        cmd_info.pNext = nullptr;
+        cmd_info.pInheritanceInfo = nullptr;
+        cmd_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        VK_CHECK(vkBeginCommandBuffer(cmd, &cmd_info));
 
-    // Make a clear-color from the frame number. This will flash with a 120*pi frame period.
-    VkClearValue clear_value;
-    float flash = abs(sin(frame_number / 120.f));
-    clear_value.color = { {0.0f, 0.0f, flash, 1.0f } };
+        // Make a clear-color from the frame number. This will flash with a 120*pi frame period.
+        VkClearValue clear_value;
+        float flash = abs(sin(frame_number / 120.f));
+        clear_value.color = { {0.0f, 0.0f, flash, 1.0f } };
 
-    // Start the main renderpass
-    VkRenderPassBeginInfo rp_info = {};
-    rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    rp_info.pNext = nullptr;
-    rp_info.renderPass = renderpass;
-    rp_info.renderArea.offset.x = 0;
-    rp_info.renderArea.offset.y = 0;
-    rp_info.renderArea.extent = window_extent;
-    rp_info.framebuffer = framebuffers[swapchain_img_idx];
-    rp_info.clearValueCount = 1;
-    rp_info.pClearValues = &clear_value;
-    vkCmdBeginRenderPass(cmd, &rp_info, VK_SUBPASS_CONTENTS_INLINE);
+        // Start the main renderpass
+        VkRenderPassBeginInfo rp_info = {};
+        rp_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        rp_info.pNext = nullptr;
+        rp_info.renderPass = renderpass;
+        rp_info.renderArea.offset.x = 0;
+        rp_info.renderArea.offset.y = 0;
+        rp_info.renderArea.extent = window_extent;
+        rp_info.framebuffer = framebuffers[swapchain_img_idx];
+        rp_info.clearValueCount = 1;
+        rp_info.pClearValues = &clear_value;
+        vkCmdBeginRenderPass(cmd, &rp_info, VK_SUBPASS_CONTENTS_INLINE);
 
-    // Stop the main renderpass
-    vkCmdEndRenderPass(cmd);
-    // Stop recording the command buffer
-    VK_CHECK(vkEndCommandBuffer(cmd));
+        // Stop the main renderpass
+        vkCmdEndRenderPass(cmd);
+        // Stop recording the command buffer
+        VK_CHECK(vkEndCommandBuffer(cmd));
+    }
 
-    // Prepare the submission to the queue
-    VkSubmitInfo submit = {};
-    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit.pNext = nullptr;
-    VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    submit.pWaitDstStageMask = &wait_stage;
-    // Wait for the present semaphore to signal, indicating the swapchain is ready
-    submit.waitSemaphoreCount = 1;
-    submit.pWaitSemaphores = &present_semaphore;
-    // Signal the render semaphore to indicate that rendering has finished
-    submit.signalSemaphoreCount = 1;
-    submit.pSignalSemaphores = &render_semaphore;
-    submit.commandBufferCount = 1;
-    submit.pCommandBuffers = &cmd;
+    { // Submitting command buffer to graphics queue
+        // Prepare the submission to the queue
+        VkSubmitInfo submit = {};
+        submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit.pNext = nullptr;
+        VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        submit.pWaitDstStageMask = &wait_stage;
 
-    // Submit the command buffer to the queue to execute it
-    // render_fence will now block until the commands finish execution
-    VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit, render_fence));
+        // Wait for the present semaphore to signal, indicating the swapchain is ready
+        submit.waitSemaphoreCount = 1;
+        submit.pWaitSemaphores = &present_semaphore;
 
-    // Present the image from running the renderpass to the screen
-    VkPresentInfoKHR present_info = {};
-    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    present_info.pNext = nullptr;
-    present_info.pSwapchains = &swapchain;
-    present_info.swapchainCount = 1;
-    // Wait for the render semaphore to signal
-    present_info.pWaitSemaphores = &render_semaphore;
-    present_info.waitSemaphoreCount = 1;
-    present_info.pImageIndices = &swapchain_img_idx;
-    VK_CHECK(vkQueuePresentKHR(graphics_queue, &present_info));
+        // Signal the render semaphore to indicate that rendering has finished
+        submit.signalSemaphoreCount = 1;
+        submit.pSignalSemaphores = &render_semaphore;
 
-    // Increment the frame counter
-    frame_number++;
+        submit.commandBufferCount = 1;
+        submit.pCommandBuffers = &cmd;
+
+        // Submit the command buffer to the queue to execute it
+        // render_fence will now block until the commands finish execution
+        VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit, render_fence));
+    }
+
+    { // Present resulting image to the screen
+        VkPresentInfoKHR present_info = {};
+        present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        present_info.pNext = nullptr;
+        present_info.pSwapchains = &swapchain;
+        present_info.swapchainCount = 1;
+
+        // Wait for the render semaphore to signal
+        present_info.pWaitSemaphores = &render_semaphore;
+        present_info.waitSemaphoreCount = 1;
+
+        // Present the image from the renderpass to the screen
+        present_info.pImageIndices = &swapchain_img_idx;
+        VK_CHECK(vkQueuePresentKHR(graphics_queue, &present_info));
+
+        // Increment the frame counter
+        frame_number++;
+    }
 }
 
 void VulkanEngine::run() {
