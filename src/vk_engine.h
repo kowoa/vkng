@@ -55,11 +55,15 @@ class VulkanEngine {
     VkSemaphore present_semaphore;
     VkSemaphore render_semaphore;
     VkFence render_fence;
-    
+
     void init_vulkan();
     void init_swapchain();
     void init_commands();
     void init_default_renderpass();
     void init_framebuffers();
     void init_sync_structures();
+    void init_pipelines();
+
+    bool load_shader_module(
+        char const *const filepath, VkShaderModule &out_shader_module) const;
 };

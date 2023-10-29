@@ -1,4 +1,5 @@
 /build
+/shaderbuild
 /bin
 .cache
 cmake-build-debug

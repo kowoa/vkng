@@ -28,11 +28,17 @@ file(GLOB_RECURSE GLSL_SOURCE_FILES
     "${PROJECT_SOURCE_DIR}/shaders/*.comp"
     )
 
+## make the shader build directory if it doesn't already exist
+set(SHADER_BUILD_DIR ${PROJECT_SOURCE_DIR}/shaderbuild)
+if(NOT EXISTS ${SHADER_BUILD_DIR})
+  file(MAKE_DIRECTORY ${SHADER_BUILD_DIR})
+endif()
+
 ## iterate each shader
 foreach(GLSL ${GLSL_SOURCE_FILES})
   message(STATUS "BUILDING SHADER")
   get_filename_component(FILE_NAME ${GLSL} NAME)
-  set(SPIRV "${PROJECT_SOURCE_DIR}/shaders/${FILE_NAME}.spv")
+  set(SPIRV "${SHADER_BUILD_DIR}/${FILE_NAME}.spv")
   message(STATUS ${GLSL})
   ##execute glslang command to compile that specific shader
   add_custom_command(

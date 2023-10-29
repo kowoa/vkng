@@ -8,4 +8,4 @@ run:
 	./bin/vulkan_guide
 
 clean:
-	rm -rf build
+	rm -rf build shaderbuild

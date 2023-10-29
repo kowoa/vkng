@@ -5,6 +5,7 @@
 #include <vk_initializers.h>
 #include <vk_types.h>
 
+#include <fstream>
 #include <iostream>
 
 #include "VkBootstrap.h"
@@ -16,6 +17,16 @@
             std::cout << "Detected Vulkan error: " << err << std::endl;        \
             abort();                                                           \
         }                                                                      \
+    } while (0)
+
+#define LOG_INFO(msg)                                                          \
+    do {                                                                       \
+        std::cout << "[INFO] " << msg << std::endl;                            \
+    } while (0)
+
+#define LOG_ERROR(msg)                                                         \
+    do {                                                                       \
+        std::cout << "[ERROR] " << msg << std::endl;                           \
     } while (0)
 
 void VulkanEngine::init() {
@@ -45,6 +56,8 @@ void VulkanEngine::init() {
     init_framebuffers();
 
     init_sync_structures();
+
+    init_pipelines();
 
     // everything went fine
     initialized = true;
@@ -176,10 +189,10 @@ void VulkanEngine::run() {
 
             switch (e.type) {
                 case SDL_KEYDOWN:
-                    std::cout << "Keydown event detected" << std::endl;
+                    LOG_INFO("Keydown event detected");
                     break;
                 case SDL_KEYUP:
-                    std::cout << "Keyup event detected" << std::endl;
+                    LOG_INFO("Keyup event detected");
                     break;
                 default:
                     break;
@@ -324,4 +337,76 @@ void VulkanEngine::init_sync_structures() {
     semaphore_info.flags = 0;
     VK_CHECK(vkCreateSemaphore(device, &semaphore_info, nullptr, &present_semaphore));
     VK_CHECK(vkCreateSemaphore(device, &semaphore_info, nullptr, &render_semaphore));
+}
+
+void VulkanEngine::init_pipelines() {
+    VkShaderModule triangle_frag_shader;
+    if (!load_shader_module(
+        "shaderbuild/triangle.frag.spv", triangle_frag_shader
+    )) {
+        LOG_ERROR("Failed to build fragment shader module.");
+    } else {
+        LOG_INFO("Triangle fragment shader successfully loaded.");
+    }
+
+    VkShaderModule triangle_vert_shader;
+    if (!load_shader_module(
+        "shaderbuild/triangle.vert.spv", triangle_vert_shader
+    )) {
+        LOG_ERROR("Failed to build vertex shader module.");
+    } else {
+        LOG_INFO("Triangle vertex shader successfully loaded.");
+    }
+}
+
+bool VulkanEngine::load_shader_module(
+    char const *const filepath, VkShaderModule &out_shader_module
+) const {
+    std::vector<uint32_t> buffer;
+    { // Read file into buffer
+        // Open the file in binary mode with the cursor at the end
+        std::ifstream file(filepath, std::ios::ate | std::ios::binary);
+
+        // Failed to open file
+        if (!file.is_open()) {
+            LOG_ERROR("Failed to open file: \"" << filepath << "\".");
+            return false;
+        }
+
+        // File size in bytes is the location of the cursor
+        size_t const file_size = (size_t)file.tellg();
+
+        // Vulkan requires shader code size to be a multiple of 4 (uint32_t is 4 bytes)
+        if (file_size % 4 != 0) {
+            LOG_ERROR("File size of file \"" << filepath << "\" is not a multiple of 4.");
+        }
+
+        // Reserve a buffer big enough for the entire file
+        buffer.resize(file_size / sizeof(uint32_t));
+
+        // Load the entire file into the buffer
+        file.seekg(0);
+        file.read((char *)buffer.data(), file_size);
+        file.close();
+    }
+
+    VkShaderModule shader_module;
+    { // Create shader module for the buffer
+        VkShaderModuleCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        info.pNext = nullptr;
+
+        // codeSize has to be in bytes, so multiple the ints in the buffer by the size of an int
+        info.codeSize = buffer.size() * sizeof(uint32_t);
+        info.pCode = buffer.data();
+
+        if (vkCreateShaderModule(
+            device, &info, nullptr, &shader_module
+        ) != VK_SUCCESS) {
+            return false;
+        }
+    }
+
+    out_shader_module = shader_module;
+    return true;
 }
