@@ -116,14 +116,38 @@ void VulkanEngine::draw() {
     VK_CHECK(vkEndCommandBuffer(cmd));
 
     // Prepare the submission to the queue
-    // We want to wait on present_semaphore because it is signaled when the swapchain is ready
-    // We will signal the render_semaphore to signal that rendering has finished
     VkSubmitInfo submit = {};
-    submit.sType = VK_STRUCUTRE_TYPE_SUBMIT_INFO;
+    submit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submit.pNext = nullptr;
     VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    submit.pWaitDstStageMask = &wait_stage;
+    // Wait for the present semaphore to signal, indicating the swapchain is ready
+    submit.waitSemaphoreCount = 1;
+    submit.pWaitSemaphores = &present_semaphore;
+    // Signal the render semaphore to indicate that rendering has finished
+    submit.signalSemaphoreCount = 1;
+    submit.pSignalSemaphores = &render_semaphore;
+    submit.commandBufferCount = 1;
+    submit.pCommandBuffers = &cmd;
 
-    // TODO: Continue in "Mainloop Code" section
+    // Submit the command buffer to the queue to execute it
+    // render_fence will now block until the commands finish execution
+    VK_CHECK(vkQueueSubmit(graphics_queue, 1, &submit, render_fence));
+
+    // Present the image from running the renderpass to the screen
+    VkPresentInfoKHR present_info = {};
+    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present_info.pNext = nullptr;
+    present_info.pSwapchains = &swapchain;
+    present_info.swapchainCount = 1;
+    // Wait for the render semaphore to signal
+    present_info.pWaitSemaphores = &render_semaphore;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pImageIndices = &swapchain_img_idx;
+    VK_CHECK(vkQueuePresentKHR(graphics_queue, &present_info));
+
+    // Increment the frame counter
+    frame_number++;
 }
 
 void VulkanEngine::run() {
