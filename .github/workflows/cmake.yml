@@ -30,7 +30,7 @@ jobs:
         vulkan-use-cache: true
 
     - name: Dependencies
-      run: sudo apt-get install libsdl2-dev
+      run: sudo apt-get install libsdl2-dev glslang-dev
 
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
