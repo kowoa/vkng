@@ -113,7 +113,7 @@ jobs:
         vulkan-use-cache: true
   
     - name: Dependencies
-      run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && brew install sdl2
+      run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && brew install sdl2 glslang
 
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
