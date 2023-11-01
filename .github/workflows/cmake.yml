@@ -76,6 +76,11 @@ jobs:
         7z x SDL2.zip -o$GITHUB_WORKSPACE/SDL2
       shell: bash
 
+    - name: Install glslangValidator
+      run: |
+        choco install glslang -y
+        glslangValidator --version
+
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
       # access regardless of the host operating system
