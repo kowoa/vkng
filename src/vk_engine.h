@@ -67,3 +67,19 @@ class VulkanEngine {
     bool load_shader_module(
         char const *const filepath, VkShaderModule &out_shader_module) const;
 };
+
+class PipelineBuilder {
+  public:
+    VkPipeline build_pipeline(VkDevice device, VkRenderPass pass);
+
+  private:
+    std::vector<VkPipelineShaderStageCreateInfo> shader_stages;
+    VkPipelineVertexInputStateCreateInfo vertex_input_info;
+    VkPipelineInputAssemblyStateCreateInfo input_assembly;
+    VkViewport viewport;
+    VkRect2D scissor;
+    VkPipelineRasterizationStateCreateInfo rasterizer;
+    VkPipelineColorBlendAttachmentState color_blend_attachment;
+    VkPipelineMultisampleStateCreateInfo multisampling;
+    VkPipelineLayout pipeline_layout;
+};
