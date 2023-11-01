@@ -67,7 +67,7 @@ jobs:
       uses: humbletim/setup-vulkan-sdk@v1.2.0
       with:
         vulkan-query-version: 1.3.204.0
-        vulkan-components: Vulkan-Headers, Vulkan-Loader
+        vulkan-components: Vulkan-Headers, Vulkan-Loader, Glslang
         vulkan-use-cache: true
 
     - name: Download SDL2
@@ -75,11 +75,6 @@ jobs:
         curl -Lo SDL2.zip https://libsdl.org/release/SDL2-devel-2.24.0-VC.zip
         7z x SDL2.zip -o$GITHUB_WORKSPACE/SDL2
       shell: bash
-
-    - name: Install glslangValidator
-      run: |
-        choco install glslang -y
-        glslangValidator --version
 
     - name: Configure CMake
       # Use a bash shell so we can use the same syntax for environment variable
